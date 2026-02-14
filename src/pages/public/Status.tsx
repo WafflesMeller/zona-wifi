@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { Wifi, Copy, CheckCircle2, AlertCircle, Clock, ArrowRight } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function Status() {
   const navigate = useNavigate();
