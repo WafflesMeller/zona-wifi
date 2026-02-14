@@ -20,7 +20,6 @@ export default function Status() {
       navigate('/'); // Si no hay ticket, lo devolvemos al inicio
       return;
     }
-
     const parsedTicket = JSON.parse(savedTicket);
     setTicket(parsedTicket);
 
