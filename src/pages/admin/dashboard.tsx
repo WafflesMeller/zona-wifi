@@ -43,7 +43,7 @@ useEffect(() => {
       console.error("Error BCV:", error);
       setBcvRate(396.37); // fallback
     } finally {
-      setLoadingBcv(false);
+      setLoading(false);
     }
   };
 
