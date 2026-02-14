@@ -7,7 +7,8 @@ export default async function handler(req: any, res: any) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { key } = req.query;
+  // 🔐 Leer el secret desde header
+  const key = req.headers["x-api-key"];
 
   if (key !== process.env.MIKROTIK_SECRET) {
     return res.status(401).send("unauthorized");
