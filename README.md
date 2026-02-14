@@ -130,3 +130,54 @@
     - Configurar Scheduler para ejecución cada 30-60 segundos.# zona-wifi
 # zona-wifi
 # zona-wifi
+
+
+:local apiUrl "https://tu-dominio.vercel.app/api/get-tickets?key=CLAVE_SECRETA"
+:local result ""
+
+:do {
+    :set result ([/tool fetch url=$apiUrl mode=https http-method=get keep-result=no as-value output=user]->"data")
+} on-error={
+    :log error "InjuWifi: Error conectando con API"
+}
+
+:if ([:len $result] > 0 && $result != "none" && $result != "error") do={
+
+    :local content $result
+
+    :while ([:len $content] > 0) do={
+
+        :local semiPos [:find $content ";"]
+        :local ticket ""
+
+        :if ([:type $semiPos] = "num") do={
+            :set ticket [:pick $content 0 $semiPos]
+            :set content [:pick $content ($semiPos + 1) [:len $content]]
+        } else={
+            :set ticket $content
+            :set content ""
+        }
+
+        :local commaPos [:find $ticket ","]
+        :if ([:type $commaPos] = "num") do={
+
+            :local userCode [:pick $ticket 0 $commaPos]
+            :local userPlan [:pick $ticket ($commaPos + 1) [:len $ticket]]
+
+            # Evitar duplicados
+            :if ([:len [/ip hotspot user find name=$userCode]] = 0) do={
+
+                :do {
+                    /ip hotspot user add name=$userCode password=$userCode profile=$userPlan server="hotspot1"
+                    :log info ("InjuWifi: Ticket creado -> " . $userCode . " / " . $userPlan)
+                } on-error={
+                    :log error ("InjuWifi: Perfil no existe -> " . $userPlan)
+                }
+
+            }
+
+        }
+
+    }
+
+}
