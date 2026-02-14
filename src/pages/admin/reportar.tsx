@@ -1,8 +1,7 @@
 'use client';
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Hash, DollarSign, Building2, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Hash, DollarSign, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import AdminNavbar from '../../components/AdminNavbar';
 
 export default function ReportarPagoPage() {

@@ -1,13 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import {
   Users,
   DollarSign,
   Ticket,
-  LogOut,
-  Activity,
   Clock,
   ShieldAlert,
 } from "lucide-react";
@@ -25,13 +22,36 @@ interface Venta {
 }
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bcvRate, setBcvRate] = useState(38.5);
+  const [bcvRate, setBcvRate] = useState<number>(0);
+
 
   // ✨ NUEVO: Estado del reloj que se actualiza cada segundo
   const [currentTime, setCurrentTime] = useState(Date.now());
+
+    useEffect(() => {
+      const fetchBcv = async () => {
+        try {
+          const response = await fetch("/api/bcv");
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("No JSON");
+          }
+          const data = await response.json();
+          if (data.ok && data.price) {
+            setBcvRate(data.price);
+          }
+        } catch (error) {
+          console.error("Error obteniendo BCV, usando fallback", error);
+          setBcvRate(38.5);
+        } finally {
+          setTimeout(() => setLoading(false), 800);
+        }
+      };
+  
+      fetchBcv();
+    }, []);
 
   useEffect(() => {
     // 1. Carga inicial de datos
@@ -83,10 +103,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/admin/login");
-  };
 
   // ==========================================
   // 🧠 LÓGICA DE CÁLCULO DE MÉTRICAS (Basada en currentTime)

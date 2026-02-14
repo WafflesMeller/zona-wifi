@@ -1,5 +1,6 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
+import type { Transition } from "framer-motion";
+
 import { Wifi, MapPin, ChevronDown } from 'lucide-react';
 
 interface Props {
@@ -9,8 +10,9 @@ interface Props {
 }
 
 export default function HeroNavbar({ isCompact, onBuyClick, onNavbarClick }: Props) {
-  // Configuración de animación más suave y sedosa
-  const smoothTransition = { type: "spring", stiffness: 180, damping: 28 };
+
+// Y define la constante así:
+const smoothTransition: Transition = { type: "spring", stiffness: 180, damping: 28 };
 
   return (
     <>
