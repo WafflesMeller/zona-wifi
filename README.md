@@ -129,3 +129,4 @@
     - Copiar script de "Fetch & Sync".
     - Configurar Scheduler para ejecución cada 30-60 segundos.# zona-wifi
 # zona-wifi
+# zona-wifi
