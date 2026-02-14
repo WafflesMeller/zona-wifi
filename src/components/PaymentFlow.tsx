@@ -48,28 +48,26 @@ export default function PaymentFlow() {
     referencia: "",
   });
 
-  useEffect(() => {
-    const fetchBcv = async () => {
-      try {
-        const response = await fetch("/api/bcv");
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("No JSON");
-        }
-        const data = await response.json();
-        if (data.ok && data.price) {
-          setBcvRate(data.price);
-        }
-      } catch (error) {
-        console.error("Error obteniendo BCV, usando fallback", error);
-        setBcvRate(38.5);
-      } finally {
-        setTimeout(() => setLoadingBcv(false), 800);
-      }
-    };
+useEffect(() => {
+  const fetchBcv = async () => {
+    try {
+      const res = await fetch("https://bici-aventuras-app.vercel.app/api/tasa");
+      const data = await res.json();
 
-    fetchBcv();
-  }, []);
+      if (data.ok) {
+        setBcvRate(data.price);
+      }
+    } catch (error) {
+      console.error("Error BCV:", error);
+      setBcvRate(396.37); // fallback
+    } finally {
+      setLoadingBcv(false);
+    }
+  };
+
+  fetchBcv();
+}, []);
+
 
   const handleSelectPlan = (planId: number) => {
     setSelectedPlan(planId);

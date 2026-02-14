@@ -30,28 +30,26 @@ export default function AdminDashboard() {
   // ✨ NUEVO: Estado del reloj que se actualiza cada segundo
   const [currentTime, setCurrentTime] = useState(Date.now());
 
-    useEffect(() => {
-      const fetchBcv = async () => {
-        try {
-          const response = await fetch("/api/bcv");
-          const contentType = response.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("No JSON");
-          }
-          const data = await response.json();
-          if (data.ok && data.price) {
-            setBcvRate(data.price);
-          }
-        } catch (error) {
-          console.error("Error obteniendo BCV, usando fallback", error);
-          setBcvRate(38.5);
-        } finally {
-          setTimeout(() => setLoading(false), 800);
-        }
-      };
-  
-      fetchBcv();
-    }, []);
+useEffect(() => {
+  const fetchBcv = async () => {
+    try {
+      const res = await fetch("https://bici-aventuras-app.vercel.app/api/tasa");
+      const data = await res.json();
+
+      if (data.ok) {
+        setBcvRate(data.price);
+      }
+    } catch (error) {
+      console.error("Error BCV:", error);
+      setBcvRate(396.37); // fallback
+    } finally {
+      setLoadingBcv(false);
+    }
+  };
+
+  fetchBcv();
+}, []);
+
 
   useEffect(() => {
     // 1. Carga inicial de datos
