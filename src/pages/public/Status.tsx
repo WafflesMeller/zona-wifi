@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { Wifi, Copy, CheckCircle2, AlertCircle, Clock, ArrowRight } from 'lucide-react';
 
@@ -13,40 +14,75 @@ export default function Status() {
   const [isCopied, setIsCopied] = useState(false);
   const [percentage, setPercentage] = useState(100);
 
-  useEffect(() => {
-    // 1. Cargar datos del LocalStorage
-    const savedTicket = localStorage.getItem('wifi_ticket');
-    if (!savedTicket) {
-      navigate('/'); // Si no hay ticket, lo devolvemos al inicio
+const [searchParams] = useSearchParams();
+
+useEffect(() => {
+  const fetchStatus = async () => {
+    // 1️⃣ Obtener código desde URL o localStorage
+    const codeFromUrl = searchParams.get('code');
+    const savedCode = localStorage.getItem('wifi_last_code');
+
+    const finalCode = codeFromUrl || savedCode;
+
+    if (!finalCode) {
+      navigate('/');
       return;
     }
-    const parsedTicket = JSON.parse(savedTicket);
-    setTicket(parsedTicket);
 
-    // 2. Lógica del temporizador (Basada en Timestamp absoluto para evitar desincronización)
+    // Guardarlo para futuras recargas
+    localStorage.setItem('wifi_last_code', finalCode);
+
+    // 2️⃣ Consultar Supabase
+    const { data, error } = await supabase
+      .from('ventas_wifi')
+      .select('created_at, duracion_minutos')
+      .eq('codigo_login', finalCode)
+      .single();
+
+    if (error || !data) {
+      navigate('/');
+      return;
+    }
+
+    // 3️⃣ Calcular tiempo real basado en BD
+    const endTime =
+      new Date(data.created_at).getTime() +
+      data.duracion_minutos * 60 * 1000;
+
+    setTicket({
+      codigo: finalCode,
+      duracionMinutos: data.duracion_minutos,
+      startTime: new Date(data.created_at).getTime(),
+    });
+    
+    loginToHotspot(finalCode);
+
     const updateTimer = () => {
       const now = Date.now();
-      const endTime = parsedTicket.startTime + (parsedTicket.duracionMinutos * 60 * 1000);
       const remainingSeconds = Math.floor((endTime - now) / 1000);
 
       if (remainingSeconds <= 0) {
         setTimeLeft(0);
         setPercentage(0);
         setIsExpired(true);
-        localStorage.removeItem('wifi_ticket'); // Limpiamos el ticket vencido
-      } else {
-        setTimeLeft(remainingSeconds);
-        const totalSeconds = parsedTicket.duracionMinutos * 60;
-        setPercentage((remainingSeconds / totalSeconds) * 100);
+        return;
       }
+
+      setTimeLeft(remainingSeconds);
+
+      const totalSeconds = data.duracion_minutos * 60;
+      setPercentage((remainingSeconds / totalSeconds) * 100);
     };
 
-    // Ejecutar inmediatamente y luego cada segundo
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [navigate]);
+  };
+
+  fetchStatus();
+}, [navigate, searchParams]);
+
 
   // Función para formatear HH:MM:SS
   const formatTime = (seconds: number) => {
@@ -83,7 +119,28 @@ export default function Status() {
     }
   };
 
-  if (!ticket) return null; // Evita parpadeos antes de redirigir
+  if (!ticket) return null;
+
+  const loginToHotspot = async (codigo: string) => {
+  const routerIp = "http://10.0.0.1/login";
+
+  const formData = new URLSearchParams();
+  formData.append("username", codigo);
+  formData.append("password", codigo);
+
+  try {
+    await fetch(routerIp, {
+      method: "POST",
+      body: formData,
+      mode: "no-cors",
+    });
+
+    console.log("Login automático enviado");
+  } catch (err) {
+    console.log("No se pudo enviar login automático");
+  }
+};
+
 
   return (
     <div className="min-h-screen w-full bg-gray-950 font-sans text-gray-100 flex flex-col relative overflow-hidden">

@@ -48,26 +48,27 @@ export default function PaymentFlow() {
     referencia: "",
   });
 
-useEffect(() => {
-  const fetchBcv = async () => {
-    try {
-      const res = await fetch("https://bici-aventuras-app.vercel.app/api/tasa");
-      const data = await res.json();
+  useEffect(() => {
+    const fetchBcv = async () => {
+      try {
+        const res = await fetch(
+          "https://bici-aventuras-app.vercel.app/api/tasa",
+        );
+        const data = await res.json();
 
-      if (data.ok) {
-        setBcvRate(data.price);
+        if (data.ok) {
+          setBcvRate(data.price);
+        }
+      } catch (error) {
+        console.error("Error BCV:", error);
+        setBcvRate(396.37); // fallback
+      } finally {
+        setLoadingBcv(false);
       }
-    } catch (error) {
-      console.error("Error BCV:", error);
-      setBcvRate(396.37); // fallback
-    } finally {
-      setLoadingBcv(false);
-    }
-  };
+    };
 
-  fetchBcv();
-}, []);
-
+    fetchBcv();
+  }, []);
 
   const handleSelectPlan = (planId: number) => {
     setSelectedPlan(planId);
@@ -117,7 +118,8 @@ useEffect(() => {
       localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
 
       // 4. Redirigimos suavemente a la pantalla del temporizador
-      navigate("/status");
+      localStorage.setItem("wifi_last_code", data.codigo);
+      navigate(`/status?code=${data.codigo}`);
     } catch (err: any) {
       console.error("Error procesando pago:", err);
       alert(
