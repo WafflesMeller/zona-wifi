@@ -68,7 +68,7 @@ export default function Status() {
 
       setTimeout(() => {
         loginToHotspot(finalCode);
-      }, 1500);
+      }, 2000);
 
       const updateTimer = () => {
         const now = Date.now();
@@ -133,26 +133,32 @@ export default function Status() {
 
   if (!ticket) return null;
 
-  const loginToHotspot = async (codigo: string) => {
-    const routerIp = "http://10.0.0.1/login";
+  const loginToHotspot = (codigo: string) => {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "http://10.0.0.1/login";
 
-    const formData = new URLSearchParams();
-    formData.append("username", codigo);
-    formData.append("password", codigo);
-    formData.append("dst", "");
-    formData.append("popup", "true");
+    const userInput = document.createElement("input");
+    userInput.type = "hidden";
+    userInput.name = "username";
+    userInput.value = codigo;
 
-    try {
-      await fetch(routerIp, {
-        method: "POST",
-        body: formData,
-        mode: "no-cors",
-      });
+    const passInput = document.createElement("input");
+    passInput.type = "hidden";
+    passInput.name = "password";
+    passInput.value = codigo;
 
-      console.log("Login automático enviado");
-    } catch (err) {
-      console.log("Error enviando login automático");
-    }
+    const dstInput = document.createElement("input");
+    dstInput.type = "hidden";
+    dstInput.name = "dst";
+    dstInput.value = "http://zona-wifi-inju.vercel.app/status?code=" + codigo;
+
+    form.appendChild(userInput);
+    form.appendChild(passInput);
+    form.appendChild(dstInput);
+
+    document.body.appendChild(form);
+    form.submit();
   };
 
   return (
