@@ -115,16 +115,25 @@ export default function PaymentFlow() {
       };
 
       // 3. Guardamos de forma persistente
-      localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
-
-      // 4. Redirigimos suavemente a la pantalla del temporizador
-        localStorage.setItem("wifi_last_code", data.codigo);
-
-        // Esperar que el script del MikroTik cree el usuario
         setTimeout(() => {
-          window.location.href =
-            "http://10.0.0.1/login?code=" + data.codigo;
-        }, 4000);
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = "http://10.0.0.1/login";
+
+          const user = document.createElement("input");
+          user.name = "username";
+          user.value = data.codigo.toUpperCase();
+          form.appendChild(user);
+
+          const pass = document.createElement("input");
+          pass.name = "password";
+          pass.value = data.codigo.toUpperCase();
+          form.appendChild(pass);
+
+          document.body.appendChild(form);
+          form.submit();
+        }, 10000);
+
 
     } catch (err: any) {
       console.error("Error procesando pago:", err);
