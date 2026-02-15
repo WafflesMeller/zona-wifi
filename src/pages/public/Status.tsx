@@ -28,6 +28,27 @@ export default function Status() {
 
   const [searchParams] = useSearchParams();
 
+  // 🔥 Convierte formato HH:MM:SS a segundos
+  const convertirDuracionASegundos = (duracion: any): number => {
+    if (!duracion) return 0;
+
+    // Si ya es número (formato viejo)
+    if (!isNaN(duracion)) {
+      return Number(duracion) * 60;
+    }
+
+    // Si viene en formato HH:MM:SS
+    const partes = duracion.split(":");
+    if (partes.length !== 3) return 0;
+
+    const horas = parseInt(partes[0]) || 0;
+    const minutos = parseInt(partes[1]) || 0;
+    const segundos = parseInt(partes[2]) || 0;
+
+    return horas * 3600 + minutos * 60 + segundos;
+  };
+
+
   useEffect(() => {
     const fetchStatus = async () => {
       // 1️⃣ Obtener código desde URL o localStorage
@@ -57,8 +78,11 @@ export default function Status() {
       }
 
       // 3️⃣ Calcular tiempo real basado en BD
+      const totalSeconds = convertirDuracionASegundos(data.duracion_minutos);
+
       const endTime =
-        new Date(data.created_at).getTime() + data.duracion_minutos * 60 * 1000;
+        new Date(data.created_at).getTime() + totalSeconds * 1000;
+
 
       setTicket({
         codigo: finalCode,
@@ -80,13 +104,12 @@ export default function Status() {
 
         setTimeLeft(remainingSeconds);
 
-        const totalSeconds = data.duracion_minutos * 60;
         setPercentage((remainingSeconds / totalSeconds) * 100);
       };
 
       updateTimer();
       const interval = setInterval(updateTimer, 1000);
-
+ 
       return () => clearInterval(interval);
     };
 

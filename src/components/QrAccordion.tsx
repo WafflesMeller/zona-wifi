@@ -41,7 +41,7 @@ export default function QrAccordion({ alt = "QR" }) {
       >
         <div className="">
           <img
-            src="/QR-YENDER.jpeg"
+            src="/QR-YENDER.webp"
             alt={alt}
             className="
               w-full mx-auto
