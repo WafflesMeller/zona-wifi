@@ -80,55 +80,106 @@ export default function PaymentFlow() {
   };
 
   // 🚀 LA MAGIA SUCEDE AQUÍ: Conexión con tu RPC en Supabase
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Evita que la página se recargue
-    setIsSubmitting(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      // Llamamos a la función almacenada en tu BD
-      const { data, error } = await supabase.rpc("procesar_venta_wifi", {
-        p_referencia: formData.referencia,
-        p_cedula: formData.cedula,
-        p_nombre: formData.nombre,
-        p_telefono: formData.telefono,
-        p_plan_id: selectedPlan,
-      });
+  let redirectTimeout: any;
+  let fallbackTimeout: any;
 
-      if (error) {
-        throw new Error(error.message);
-      }
+  try {
+    const { data, error } = await supabase.rpc("procesar_venta_wifi", {
+      p_referencia: formData.referencia,
+      p_cedula: formData.cedula,
+      p_nombre: formData.nombre,
+      p_telefono: formData.telefono,
+      p_plan_id: selectedPlan,
+    });
 
-      // Si llegamos aquí, ¡la base de datos procesó el pago y generó el ticket!
-      console.log("¡Éxito! Datos de la conexión:", data);
-
-      // 1. Buscamos cuántas horas compró para convertirlas a minutos
-      const planSeleccionadoObj = PLANES.find((p) => p.id === selectedPlan);
-      const duracionMinutos = planSeleccionadoObj
-        ? planSeleccionadoObj.horas * 60
-        : 60;
-
-      // 2. Armamos el objeto que guardaremos en el teléfono
-      const ticketData = {
-        codigo: data.codigo, // El código aleatorio generado en Supabase
-        duracionMinutos: duracionMinutos,
-        startTime: Date.now(), // Timestamp exacto para el temporizador anti-trampas
-      };
-
-      // 3. Guardamos de forma persistente
-      localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
-
-      // 4. Redirigimos suavemente a la pantalla del temporizador
-      localStorage.setItem("wifi_last_code", data.codigo);
-      navigate(`/status?code=${data.codigo}`);
-    } catch (err: any) {
-      console.error("Error procesando pago:", err);
-      alert(
-        err.message || "No se encontró el pago o la referencia ya fue usada.",
-      );
-    } finally {
-      setIsSubmitting(false);
+    if (error) {
+      throw new Error(error.message);
     }
-  };
+
+    if (!data?.codigo) {
+      throw new Error("No se recibió código de conexión.");
+    }
+
+    const codigo = String(data.codigo).toUpperCase().trim();
+
+    const planSeleccionadoObj = PLANES.find((p) => p.id === selectedPlan);
+    const duracionMinutos = planSeleccionadoObj
+      ? planSeleccionadoObj.horas * 60
+      : 60;
+
+    const ticketData = {
+      codigo,
+      duracionMinutos,
+      startTime: Date.now(),
+    };
+
+    localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
+    localStorage.setItem("wifi_last_code", codigo);
+
+    const loginUrl = `http://10.0.0.1/login?code=${codigo}`;
+
+    // 🔥 Intento automático
+    redirectTimeout = setTimeout(() => {
+      window.location.href = loginUrl;
+    }, 800);
+
+    // 🔥 Fallback inteligente
+    fallbackTimeout = setTimeout(() => {
+      // Si todavía estamos en esta página
+      if (window.location.hostname.includes("vercel.app")) {
+        const container = document.createElement("div");
+        container.innerHTML = `
+          <div style="
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: sans-serif;
+            z-index: 9999;
+            padding: 20px;
+            text-align: center;
+          ">
+            <h2 style="font-size: 22px; margin-bottom: 20px;">
+              Conexión lista 🚀
+            </h2>
+            <a href="${loginUrl}" style="
+              background: #2563eb;
+              padding: 15px 30px;
+              border-radius: 999px;
+              color: white;
+              font-weight: bold;
+              text-decoration: none;
+              font-size: 16px;
+            ">
+              CONECTAR A INTERNET
+            </a>
+            <p style="margin-top: 15px; opacity: 0.6; font-size: 12px;">
+              Si no se redirige automáticamente, presiona el botón.
+            </p>
+          </div>
+        `;
+        document.body.appendChild(container);
+      }
+    }, 3000);
+
+  } catch (err: any) {
+    console.error("Error procesando pago:", err);
+    alert(
+      err.message || "No se encontró el pago o la referencia ya fue usada."
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   // Función para copiar (con soporte para localhost/HTTP)
   const handleCopy = async () => {
