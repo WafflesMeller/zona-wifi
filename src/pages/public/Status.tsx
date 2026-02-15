@@ -66,9 +66,6 @@ export default function Status() {
         startTime: new Date(data.created_at).getTime(),
       });
 
-      setTimeout(() => {
-        loginToHotspot(finalCode);
-      }, 2000);
 
       const updateTimer = () => {
         const now = Date.now();
@@ -109,57 +106,39 @@ export default function Status() {
   };
 
   // Copiar código al portapapeles
-  const handleCopyCode = async () => {
-    if (!ticket) return;
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(ticket.codigo);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = ticket.codigo;
-        textArea.style.position = "fixed";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand("copy");
-        textArea.remove();
-      }
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Error al copiar", err);
+const handleCopyCode = async () => {
+  if (!ticket) return;
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(ticket.codigo);
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = ticket.codigo;
+      textArea.style.position = "fixed";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand("copy");
+      textArea.remove();
     }
-  };
+
+    setIsCopied(true);
+
+    // 🔥 Redirigir después de copiar
+    setTimeout(() => {
+      window.location.href = "http://10.0.0.1/login";
+    }, 800);
+
+  } catch (err) {
+    console.error("Error al copiar", err);
+  }
+};
+
 
   if (!ticket) return null;
 
-  const loginToHotspot = (codigo: string) => {
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "http://10.0.0.1/login";
-
-    const userInput = document.createElement("input");
-    userInput.type = "hidden";
-    userInput.name = "username";
-    userInput.value = codigo;
-
-    const passInput = document.createElement("input");
-    passInput.type = "hidden";
-    passInput.name = "password";
-    passInput.value = codigo;
-
-    const dstInput = document.createElement("input");
-    dstInput.type = "hidden";
-    dstInput.name = "dst";
-    dstInput.value = "http://zona-wifi-inju.vercel.app/status?code=" + codigo;
-
-    form.appendChild(userInput);
-    form.appendChild(passInput);
-    form.appendChild(dstInput);
-
-    document.body.appendChild(form);
-    form.submit();
-  };
+ 
 
   return (
     <div className="min-h-screen w-full bg-gray-950 font-sans text-gray-100 flex flex-col relative overflow-hidden">
