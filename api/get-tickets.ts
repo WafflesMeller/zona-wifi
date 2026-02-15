@@ -1,14 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 
-function minutosToHHMMSS(minutos: number) {
-  const horas = Math.floor(minutos / 60);
-  const mins = minutos % 60;
-
-  return `${horas.toString().padStart(2, "0")}:${mins
-    .toString()
-    .padStart(2, "0")}:00`;
-}
-
 export default async function handler(req: any, res: any) {
 
   const supabase = createClient(
@@ -33,10 +24,7 @@ export default async function handler(req: any, res: any) {
   }
 
   const formatted = data
-    .map(row => {
-      const tiempo = minutosToHHMMSS(row.duracion_minutos);
-      return `${row.codigo_login},${tiempo}`;
-    })
+    .map(row => `${row.codigo_login},${row.duracion_minutos}`)
     .join(";");
 
   res.setHeader("Content-Type", "text/plain");
