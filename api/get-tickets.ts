@@ -27,9 +27,11 @@ export default async function handler(req: any, res: any) {
       return res.status(401).send("unauthorized");
     }
 
+    // 🔥 Solo tickets de las últimas 24 horas
     const { data, error } = await supabase
       .from("ventas_wifi")
-      .select("codigo_login, duracion_minutos");
+      .select("codigo_login, duracion_minutos, created_at")
+      .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
     if (error) {
       console.error(error);
