@@ -41,6 +41,13 @@ export default async function handler(req, res) {
       return parseFloat(limpio.replace(',', '.')) || 0;
     };
 
+    // 🔥 NUEVA FUNCIÓN: obtener últimos 4 dígitos
+    const ultimos4 = (ref) => {
+      if (!ref) return null;
+      const soloNumeros = ref.toString().replace(/\D/g, '');
+      return soloNumeros.slice(-4);
+    };
+
     let referencia = null;
     let monto = 0;
     let banco = "DESCONOCIDO";
@@ -87,6 +94,9 @@ export default async function handler(req, res) {
       banco = "DESCONOCIDO";
     }
 
+    // 🔥 AQUÍ SE RECORTA A LOS ÚLTIMOS 4 DÍGITOS
+    referencia = ultimos4(referencia);
+
     // -----------------------------
     // INSERTAR EN transacciones_inju
     // -----------------------------
@@ -103,7 +113,6 @@ export default async function handler(req, res) {
 
     if (error) {
 
-      // Error por duplicado
       if (error.code === '23505') {
         return res.status(409).json({
           success: false,
