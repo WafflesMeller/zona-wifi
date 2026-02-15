@@ -123,25 +123,41 @@ const handleSubmit = async (e: React.FormEvent) => {
     // 🔥 LOGIN AUTOMÁTICO DIRECTO (POST)
     const loginUrl = "http://10.0.0.1/login";
 
-    // Crear formulario invisible
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = loginUrl;
+const form = document.createElement("form");
+form.method = "POST";
+form.action = loginUrl;
 
-    const userInput = document.createElement("input");
-    userInput.type = "hidden";
-    userInput.name = "username";
-    userInput.value = codigo;
-    form.appendChild(userInput);
+// username
+const userInput = document.createElement("input");
+userInput.type = "hidden";
+userInput.name = "username";
+userInput.value = codigo;
+form.appendChild(userInput);
 
-    const passInput = document.createElement("input");
-    passInput.type = "hidden";
-    passInput.name = "password";
-    passInput.value = codigo;
-    form.appendChild(passInput);
+// password
+const passInput = document.createElement("input");
+passInput.type = "hidden";
+passInput.name = "password";
+passInput.value = codigo;
+form.appendChild(passInput);
 
-    document.body.appendChild(form);
-    form.submit();
+// 🔥 DESTINO después de login
+const dstInput = document.createElement("input");
+dstInput.type = "hidden";
+dstInput.name = "dst";
+dstInput.value = "https://zona-wifi-inju.vercel.app/status";
+form.appendChild(dstInput);
+
+// popup
+const popupInput = document.createElement("input");
+popupInput.type = "hidden";
+popupInput.name = "popup";
+popupInput.value = "true";
+form.appendChild(popupInput);
+
+document.body.appendChild(form);
+form.submit();
+
 
 
   } catch (err: any) {
