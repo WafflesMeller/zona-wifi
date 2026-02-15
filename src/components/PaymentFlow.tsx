@@ -121,7 +121,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     localStorage.setItem("wifi_last_code", codigo);
 
     // 🔥 LOGIN AUTOMÁTICO DIRECTO (POST)
-    const loginUrl = "http://10.0.0.1/login";
+    // Guardar antes de salir
+localStorage.setItem("wifi_autologin_code", codigo);
+
+const loginUrl = `http://10.0.0.1/login`;
+
 
 const form = document.createElement("form");
 form.method = "POST";
