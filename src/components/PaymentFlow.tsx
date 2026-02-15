@@ -120,55 +120,29 @@ const handleSubmit = async (e: React.FormEvent) => {
     localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
     localStorage.setItem("wifi_last_code", codigo);
 
-    const loginUrl = `http://10.0.0.1/login?code=${codigo}`;
+    // 🔥 LOGIN AUTOMÁTICO DIRECTO (POST)
+    const loginUrl = "http://10.0.0.1/login";
 
-    // 🔥 Intento automático
-    redirectTimeout = setTimeout(() => {
-      window.location.href = loginUrl;
-    }, 800);
+    // Crear formulario invisible
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = loginUrl;
 
-    // 🔥 Fallback inteligente
-    fallbackTimeout = setTimeout(() => {
-      // Si todavía estamos en esta página
-      if (window.location.hostname.includes("vercel.app")) {
-        const container = document.createElement("div");
-        container.innerHTML = `
-          <div style="
-            position: fixed;
-            inset: 0;
-            background: #0f172a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-family: sans-serif;
-            z-index: 9999;
-            padding: 20px;
-            text-align: center;
-          ">
-            <h2 style="font-size: 22px; margin-bottom: 20px;">
-              Conexión lista 🚀
-            </h2>
-            <a href="${loginUrl}" style="
-              background: #2563eb;
-              padding: 15px 30px;
-              border-radius: 999px;
-              color: white;
-              font-weight: bold;
-              text-decoration: none;
-              font-size: 16px;
-            ">
-              CONECTAR A INTERNET
-            </a>
-            <p style="margin-top: 15px; opacity: 0.6; font-size: 12px;">
-              Si no se redirige automáticamente, presiona el botón.
-            </p>
-          </div>
-        `;
-        document.body.appendChild(container);
-      }
-    }, 3000);
+    const userInput = document.createElement("input");
+    userInput.type = "hidden";
+    userInput.name = "username";
+    userInput.value = codigo;
+    form.appendChild(userInput);
+
+    const passInput = document.createElement("input");
+    passInput.type = "hidden";
+    passInput.name = "password";
+    passInput.value = codigo;
+    form.appendChild(passInput);
+
+    document.body.appendChild(form);
+    form.submit();
+
 
   } catch (err: any) {
     console.error("Error procesando pago:", err);
