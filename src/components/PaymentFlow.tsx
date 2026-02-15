@@ -115,26 +115,11 @@ export default function PaymentFlow() {
       };
 
       // 3. Guardamos de forma persistente
-        setTimeout(() => {
-          const form = document.createElement("form");
-          form.method = "POST";
-          form.action = "http://10.0.0.1/login";
+      localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
 
-          const user = document.createElement("input");
-          user.name = "username";
-          user.value = data.codigo.toUpperCase();
-          form.appendChild(user);
-
-          const pass = document.createElement("input");
-          pass.name = "password";
-          pass.value = data.codigo.toUpperCase();
-          form.appendChild(pass);
-
-          document.body.appendChild(form);
-          form.submit();
-        }, 10000);
-
-
+      // 4. Redirigimos suavemente a la pantalla del temporizador
+      localStorage.setItem("wifi_last_code", data.codigo);
+      navigate(`/status?code=${data.codigo}`);
     } catch (err: any) {
       console.error("Error procesando pago:", err);
       alert(
