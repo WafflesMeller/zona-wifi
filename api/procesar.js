@@ -1,92 +1,135 @@
-// -----------------------------------------------------------------
-// 3. PREPARAR PAYLOAD (AJUSTADO A transacciones_inju)
-// -----------------------------------------------------------------
+import { createClient } from '@supabase/supabase-js';
 
-let payloadDB = {};
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-if (procesado) {
-    payloadDB = {
-        referencia: data.referencia,
-        monto: Number(data.monto.toFixed(2)), // numeric(10,2)
-        banco_origen: data.banco,
-        estado: 'pendiente'
-        // created_at se genera solo
-        // id se genera solo
-    };
-} else {
-    // Si no se pudo procesar el formato
-    const refError = `ERR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+export default async function handler(req, res) {
+  try {
 
-    payloadDB = {
-        referencia: refError,
-        monto: 0,
-        banco_origen: 'DESCONOCIDO',
-        estado: 'pendiente'
-    };
-}
+    // -----------------------------
+    // CORS
+    // -----------------------------
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-// -----------------------------------------------------------------
-// 4. GUARDAR EN SUPABASE (TABLA CORRECTA)
-// -----------------------------------------------------------------
-
-const guardarConReintentos = async (intentosMaximos = 3) => {
-    for (let i = 1; i <= intentosMaximos; i++) {
-        try {
-            const { error } = await supabase
-                .from('transacciones_inju') // 👈 TABLA CORRECTA
-                .insert([payloadDB]); // insert siempre como array
-
-            if (!error) return { exito: true };
-
-            // Código PostgreSQL para violación UNIQUE
-            if (error.code === '23505') {
-                return { exito: false, esDuplicado: true };
-            }
-
-            throw error;
-
-        } catch (err) {
-            if (i === intentosMaximos) {
-                return { exito: false, esDuplicado: false, error: err };
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 1000 * i));
-        }
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
     }
-};
 
-const resultado = await guardarConReintentos();
+    // -----------------------------
+    // RECIBIR DATOS
+    // -----------------------------
+    const body = req.body || {};
+    const query = req.query || {};
 
-// -----------------------------------------------------------------
-// 5. RESPUESTA
-// -----------------------------------------------------------------
+    const TituloNotificacion = body.TituloNotificacion || query.TituloNotificacion;
+    const TextoNotificacion = body.TextoNotificacion || query.TextoNotificacion;
 
-if (resultado.exito) {
-    console.log(`✅ Transacción guardada: ${payloadDB.referencia}`);
+    if (!TituloNotificacion || !TextoNotificacion) {
+      return res.status(400).json({ error: "Faltan parámetros" });
+    }
+
+    // -----------------------------
+    // EXTRAER MONTO Y REFERENCIA
+    // -----------------------------
+    const parseMonto = (str) => {
+      if (!str) return 0;
+      const limpio = str.replace(/[^\d,]/g, '');
+      return parseFloat(limpio.replace(',', '.')) || 0;
+    };
+
+    let referencia = null;
+    let monto = 0;
+    let banco = "DESCONOCIDO";
+
+    const titulo = TituloNotificacion.trim();
+
+    // Pago móvil BDV
+    if (titulo === "PagomóvilBDV recibido") {
+      banco = "BDV";
+
+      const match = TextoNotificacion.match(/por Bs\. ?([\d\.,]+).*operaci[oó]n (\d+)/i);
+      if (match) {
+        monto = parseMonto(match[1]);
+        referencia = match[2];
+      }
+    }
+
+    // Transferencia otros bancos
+    else if (titulo === "Transferencia de otros bancos recibida") {
+      banco = "OTROS";
+
+      const match = TextoNotificacion.match(/por Bs\. ?([\d\.,]+).*operación (\d+)/i);
+      if (match) {
+        monto = parseMonto(match[1]);
+        referencia = match[2];
+      }
+    }
+
+    // Transferencia BDV
+    else if (titulo === "Transferencia BDV recibida") {
+      banco = "BDV";
+
+      const match = TextoNotificacion.match(/por Bs\. ?([\d\.,]+).*operación (\d+)/i);
+      if (match) {
+        monto = parseMonto(match[1]);
+        referencia = match[2];
+      }
+    }
+
+    // Si no encontró referencia válida
+    if (!referencia) {
+      referencia = `ERR-${Date.now()}`;
+      monto = 0;
+      banco = "DESCONOCIDO";
+    }
+
+    // -----------------------------
+    // INSERTAR EN transacciones_inju
+    // -----------------------------
+    const { error } = await supabase
+      .from('transacciones_inju')
+      .insert([
+        {
+          referencia,
+          monto: Number(monto.toFixed(2)),
+          banco_origen: banco,
+          estado: 'pendiente'
+        }
+      ]);
+
+    if (error) {
+
+      // Error por duplicado
+      if (error.code === '23505') {
+        return res.status(409).json({
+          success: false,
+          mensaje: "Referencia duplicada"
+        });
+      }
+
+      console.error("Error Supabase:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
 
     return res.status(200).json({
-        success: true,
-        mensaje: "Transacción registrada correctamente.",
-        data
+      success: true,
+      referencia,
+      monto,
+      banco
     });
 
-} else if (resultado.esDuplicado) {
-
-    console.warn(`⛔ Referencia duplicada: ${payloadDB.referencia}`);
-
-    return res.status(409).json({
-        success: false,
-        codigo: 'DUPLICADO',
-        mensaje: "Esta referencia ya existe."
+  } catch (err) {
+    console.error("Error crítico:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message
     });
-
-} else {
-
-    console.error("❌ Error crítico BD:", resultado.error);
-
-    return res.status(503).json({
-        success: false,
-        mensaje: "Error de conexión con la base de datos.",
-        detalle: resultado.error?.message
-    });
+  }
 }
