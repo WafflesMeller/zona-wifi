@@ -1,5 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
+function minutosToHHMMSS(minutos: number) {
+  const horas = Math.floor(minutos / 60);
+  const mins = minutos % 60;
+
+  return `${horas.toString().padStart(2, "0")}:${mins
+    .toString()
+    .padStart(2, "0")}:00`;
+}
+
 export default async function handler(req: any, res: any) {
 
   const supabase = createClient(
@@ -7,7 +16,6 @@ export default async function handler(req: any, res: any) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 🔐 Leer el secret desde header
   const key = req.headers["x-api-key"];
 
   if (key !== process.env.MIKROTIK_SECRET) {
@@ -16,7 +24,7 @@ export default async function handler(req: any, res: any) {
 
   const { data, error } = await supabase
     .from("tickets_activos_mikrotik")
-    .select("codigo_login, plan_mikrotik");
+    .select("codigo_login, duracion_minutos");
 
   if (error) return res.status(500).send("error");
 
@@ -25,7 +33,10 @@ export default async function handler(req: any, res: any) {
   }
 
   const formatted = data
-    .map(row => `${row.codigo_login},${row.plan_mikrotik}`)
+    .map(row => {
+      const tiempo = minutosToHHMMSS(row.duracion_minutos);
+      return `${row.codigo_login},${tiempo}`;
+    })
     .join(";");
 
   res.setHeader("Content-Type", "text/plain");
