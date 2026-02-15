@@ -118,8 +118,14 @@ export default function PaymentFlow() {
       localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
 
       // 4. Redirigimos suavemente a la pantalla del temporizador
-      localStorage.setItem("wifi_last_code", data.codigo);
-      navigate(`/status?code=${data.codigo}`);
+        localStorage.setItem("wifi_last_code", data.codigo);
+
+        // Esperar que el script del MikroTik cree el usuario
+        setTimeout(() => {
+          window.location.href =
+            "http://10.0.0.1/login?code=" + data.codigo;
+        }, 4000);
+
     } catch (err: any) {
       console.error("Error procesando pago:", err);
       alert(
