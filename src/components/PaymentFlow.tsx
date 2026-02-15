@@ -22,9 +22,9 @@ const PLANES = [
 ];
 
 const DATOS_PAGO = {
-  banco: "Banesco (0134)",
-  telefono: "0412-1234567",
-  cedula: "V-12.345.678",
+  banco: "VENEZUELA",
+  telefono: "0424-29-29-579",
+  cedula: "26.597.356",
 };
 
 export default function PaymentFlow() {
