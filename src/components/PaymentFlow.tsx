@@ -87,7 +87,7 @@ export default function PaymentFlow() {
     try {
       // Llamamos a la función almacenada en tu BD
       const { data, error } = await supabase.rpc("procesar_venta_wifi", {
-        p_referencia_4_digitos: formData.referencia,
+        p_referencia: formData.referencia,
         p_cedula: formData.cedula,
         p_nombre: formData.nombre,
         p_telefono: formData.telefono,
