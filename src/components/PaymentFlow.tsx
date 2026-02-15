@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -79,13 +79,10 @@ export default function PaymentFlow() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 🚀 LA MAGIA SUCEDE AQUÍ: Conexión con tu RPC en Supabase
+// 🚀 LA MAGIA SUCEDE AQUÍ: Conexión con tu RPC en Supabase
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsSubmitting(true);
-
-  let redirectTimeout: any;
-  let fallbackTimeout: any;
 
   try {
     const { data, error } = await supabase.rpc("procesar_venta_wifi", {
@@ -104,6 +101,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       throw new Error("No se recibió código de conexión.");
     }
 
+    // 🔥 Forzar MAYÚSCULAS SIEMPRE
     const codigo = String(data.codigo).toUpperCase().trim();
 
     const planSeleccionadoObj = PLANES.find((p) => p.id === selectedPlan);
@@ -117,52 +115,12 @@ const handleSubmit = async (e: React.FormEvent) => {
       startTime: Date.now(),
     };
 
+    // Guardamos el ticket
     localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
     localStorage.setItem("wifi_last_code", codigo);
 
-    // 🔥 LOGIN AUTOMÁTICO DIRECTO (POST)
-    // Guardar antes de salir
-localStorage.setItem("wifi_autologin_code", codigo);
-
-const loginUrl = `http://10.0.0.1/login`;
-
-
-const form = document.createElement("form");
-form.method = "POST";
-form.action = loginUrl;
-
-// username
-const userInput = document.createElement("input");
-userInput.type = "hidden";
-userInput.name = "username";
-userInput.value = codigo;
-form.appendChild(userInput);
-
-// password
-const passInput = document.createElement("input");
-passInput.type = "hidden";
-passInput.name = "password";
-passInput.value = codigo;
-form.appendChild(passInput);
-
-// 🔥 DESTINO después de login
-const dstInput = document.createElement("input");
-dstInput.type = "hidden";
-dstInput.name = "dst";
-dstInput.value = "https://zona-wifi-inju.vercel.app/status";
-form.appendChild(dstInput);
-
-// popup
-const popupInput = document.createElement("input");
-popupInput.type = "hidden";
-popupInput.name = "popup";
-popupInput.value = "true";
-form.appendChild(popupInput);
-
-document.body.appendChild(form);
-form.submit();
-
-
+    // 🔥 IMPORTANTE: SOLO REDIRIGIR A STATUS
+    navigate("/status");
 
   } catch (err: any) {
     console.error("Error procesando pago:", err);
