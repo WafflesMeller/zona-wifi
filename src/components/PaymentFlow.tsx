@@ -28,26 +28,6 @@ const DATOS_PAGO = {
   cedula: "26.597.356",
 };
 
-const abrirLinkBDV = () => {
-  // Limpiamos los formatos visuales de DATOS_PAGO para la URL
-  // Cédula: "26.597.356" -> "V26597356"
-  const RECEPTOR_ID = `V${DATOS_PAGO.cedula.replace(/\./g, "")}`;
-
-  // Teléfono: "0424-29-29-579" -> "584242929579"
-  const RECEPTOR_TLF = `58${DATOS_PAGO.telefono.replace(/-/g, "").substring(1)}`;
-
-  const RECEPTOR_BANCO = "0102";
-
-  // Calculamos el monto usando la misma lógica de tu interfaz
-  const precioPlan = PLANES.find((p) => p.id === selectedPlan)?.precio || 0;
-  const montoFormateado = (precioPlan * bcvRate).toFixed(2);
-
-  const descripcion = "9dxBliWt4XnVSB0LTqNasQ%3D%3D";
-
-  const linkBDV = `https://bdvdigital.banvenez.com/pagomovil?id=${RECEPTOR_ID}&phone=${RECEPTOR_TLF}&bank=${RECEPTOR_BANCO}&description=${descripcion}&amount=${montoFormateado}`;
-  window.open(linkBDV, "_blank");
-};
-
 export default function PaymentFlow() {
   const [step, setStep] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
@@ -68,6 +48,26 @@ export default function PaymentFlow() {
     cedula: "",
     referencia: "",
   });
+
+  const abrirLinkBDV = () => {
+    // Limpiamos los formatos visuales de DATOS_PAGO para la URL
+    // Cédula: "26.597.356" -> "V26597356"
+    const RECEPTOR_ID = `V${DATOS_PAGO.cedula.replace(/\./g, "")}`;
+
+    // Teléfono: "0424-29-29-579" -> "584242929579"
+    const RECEPTOR_TLF = `58${DATOS_PAGO.telefono.replace(/-/g, "").substring(1)}`;
+
+    const RECEPTOR_BANCO = "0102";
+
+    // Calculamos el monto usando la misma lógica de tu interfaz
+    const precioPlan = PLANES.find((p) => p.id === selectedPlan)?.precio || 0;
+    const montoFormateado = (precioPlan * bcvRate).toFixed(2);
+
+    const descripcion = "9dxBliWt4XnVSB0LTqNasQ%3D%3D";
+
+    const linkBDV = `https://bdvdigital.banvenez.com/pagomovil?id=${RECEPTOR_ID}&phone=${RECEPTOR_TLF}&bank=${RECEPTOR_BANCO}&description=${descripcion}&amount=${montoFormateado}`;
+    window.open(linkBDV, "_blank");
+  };
 
   useEffect(() => {
     const fetchBcv = async () => {
