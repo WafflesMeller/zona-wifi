@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+import FloatingWhatsApp from "../../components/FloatingWhatsApp";
 
 export default function Status() {
   const navigate = useNavigate();
@@ -327,6 +328,7 @@ const handleCopyCode = async () => {
           )}
         </AnimatePresence>
       </div>
+      <FloatingWhatsApp />
     </div>
   );
 }

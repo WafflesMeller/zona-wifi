@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -10,6 +10,7 @@ import {
   Loader2,
   ShieldCheck,
   Copy,
+  ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -25,6 +26,26 @@ const DATOS_PAGO = {
   banco: "VENEZUELA",
   telefono: "0424-29-29-579",
   cedula: "26.597.356",
+};
+
+const abrirLinkBDV = () => {
+  // Limpiamos los formatos visuales de DATOS_PAGO para la URL
+  // Cédula: "26.597.356" -> "V26597356"
+  const RECEPTOR_ID = `V${DATOS_PAGO.cedula.replace(/\./g, "")}`;
+
+  // Teléfono: "0424-29-29-579" -> "584242929579"
+  const RECEPTOR_TLF = `58${DATOS_PAGO.telefono.replace(/-/g, "").substring(1)}`;
+
+  const RECEPTOR_BANCO = "0102";
+
+  // Calculamos el monto usando la misma lógica de tu interfaz
+  const precioPlan = PLANES.find((p) => p.id === selectedPlan)?.precio || 0;
+  const montoFormateado = (precioPlan * bcvRate).toFixed(2);
+
+  const descripcion = "9dxBliWt4XnVSB0LTqNasQ%3D%3D";
+
+  const linkBDV = `https://bdvdigital.banvenez.com/pagomovil?id=${RECEPTOR_ID}&phone=${RECEPTOR_TLF}&bank=${RECEPTOR_BANCO}&description=${descripcion}&amount=${montoFormateado}`;
+  window.open(linkBDV, "_blank");
 };
 
 export default function PaymentFlow() {
@@ -79,59 +100,57 @@ export default function PaymentFlow() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-// 🚀 LA MAGIA SUCEDE AQUÍ: Conexión con tu RPC en Supabase
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+  // 🚀 LA MAGIA SUCEDE AQUÍ: Conexión con tu RPC en Supabase
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  try {
-    const { data, error } = await supabase.rpc("procesar_venta_wifi", {
-      p_referencia: formData.referencia,
-      p_cedula: formData.cedula,
-      p_nombre: formData.nombre,
-      p_telefono: formData.telefono,
-      p_plan_id: selectedPlan,
-    });
+    try {
+      const { data, error } = await supabase.rpc("procesar_venta_wifi", {
+        p_referencia: formData.referencia,
+        p_cedula: formData.cedula,
+        p_nombre: formData.nombre,
+        p_telefono: formData.telefono,
+        p_plan_id: selectedPlan,
+      });
 
-    if (error) {
-      throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data?.codigo) {
+        throw new Error("No se recibió código de conexión.");
+      }
+
+      // 🔥 Forzar MAYÚSCULAS SIEMPRE
+      const codigo = String(data.codigo).toUpperCase().trim();
+
+      const planSeleccionadoObj = PLANES.find((p) => p.id === selectedPlan);
+      const duracionMinutos = planSeleccionadoObj
+        ? planSeleccionadoObj.horas * 60
+        : 60;
+
+      const ticketData = {
+        codigo,
+        duracionMinutos,
+        startTime: Date.now(),
+      };
+
+      // Guardamos el ticket
+      localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
+      localStorage.setItem("wifi_last_code", codigo);
+
+      // 🔥 IMPORTANTE: SOLO REDIRIGIR A STATUS
+      navigate("/status");
+    } catch (err: any) {
+      console.error("Error procesando pago:", err);
+      alert(
+        err.message || "No se encontró el pago o la referencia ya fue usada.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (!data?.codigo) {
-      throw new Error("No se recibió código de conexión.");
-    }
-
-    // 🔥 Forzar MAYÚSCULAS SIEMPRE
-    const codigo = String(data.codigo).toUpperCase().trim();
-
-    const planSeleccionadoObj = PLANES.find((p) => p.id === selectedPlan);
-    const duracionMinutos = planSeleccionadoObj
-      ? planSeleccionadoObj.horas * 60
-      : 60;
-
-    const ticketData = {
-      codigo,
-      duracionMinutos,
-      startTime: Date.now(),
-    };
-
-    // Guardamos el ticket
-    localStorage.setItem("wifi_ticket", JSON.stringify(ticketData));
-    localStorage.setItem("wifi_last_code", codigo);
-
-    // 🔥 IMPORTANTE: SOLO REDIRIGIR A STATUS
-    navigate("/status");
-
-  } catch (err: any) {
-    console.error("Error procesando pago:", err);
-    alert(
-      err.message || "No se encontró el pago o la referencia ya fue usada."
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
+  };
 
   // Función para copiar (con soporte para localhost/HTTP)
   const handleCopy = async () => {
@@ -262,6 +281,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 )}
 
                 {/* PASO 2: FORMULARIO Y DATOS DE PAGO */}
+                {/* PASO 2: FORMULARIO Y DATOS DE PAGO */}
                 {step === 2 && (
                   <motion.div
                     key="step2"
@@ -274,6 +294,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <h3 className="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2">
                         <Smartphone size={18} /> Datos para el pago:
                       </h3>
+
                       <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm mb-4">
                         <p className="text-gray-400">Banco:</p>
                         <p className="font-bold text-white tracking-wide">
@@ -300,10 +321,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                         </p>
                       </div>
 
+                      {/* BOTÓN COPIAR DATOS */}
                       <motion.button
                         type="button"
                         onClick={handleCopy}
-                        className={`w-full py-3 rounded-full flex items-center justify-center font-semibold text-sm transition-colors duration-300 ${
+                        className={`w-full mb-4 py-3 rounded-full flex items-center justify-center font-semibold text-sm transition-colors duration-300 ${
                           isCopied
                             ? "bg-green-500/20 text-green-400 border border-green-500/50"
                             : "bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10"
@@ -333,9 +355,50 @@ const handleSubmit = async (e: React.FormEvent) => {
                           )}
                         </AnimatePresence>
                       </motion.button>
-                      <QrAccordion />
-                    </div>
 
+                      {/* ACORDEÓN CÓDIGO QR */}
+                      <QrAccordion />
+
+                      {/* NUEVO: BOTÓN DIRECTO A BDV (ESTILO GLASSMORPHISM) */}
+                      <div className="mt-3 space-y-2">
+                        <motion.button
+                          onClick={abrirLinkBDV}
+                          className="w-full relative overflow-hidden bg-[#00529b]/10 hover:bg-[#00529b]/20 backdrop-blur-md border border-[#00529b]/30 p-4 rounded-4xl flex items-center justify-between "
+                        >
+                          {/* Brillo sutil de fondo al pasar el mouse */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00529b]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-4xl"></div>
+
+                          <div className="flex items-center gap-4 relative z-10">
+                            {/* Contenedor de cristal para el logo */}
+                            <div className="bg-white/10 p-2 rounded-4xl border border-white/5 backdrop-blur-sm">
+                              <img
+                                src="/bdv-logo.webp"
+                                alt="BDV"
+                                className="h-7 w-auto object-contain drop-shadow-md"
+                              />
+                            </div>
+                            <div className="text-left">
+                              <span className="block font-bold text-white text-base leading-tight">
+                                Pagar con BDV
+                              </span>
+                              <span className="text-xs text-blue-200/60 font-medium">
+                                Ir directo a Pago Móvil
+                              </span>
+                            </div>
+                          </div>
+                          {/* Icono de Lucide reemplazando a Google Fonts */}
+                          <ExternalLink
+                            size={22}
+                            className="text-blue-400/50 group-hover:text-blue-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all relative z-10"
+                          />
+                        </motion.button>
+
+                        <p className="text-center text-[10px] leading-tight text-gray-500 px-2 pt-1">
+                          *Se abrirá la app del Banco de Venezuela con los datos
+                          precargados. (Solo Android con app instalada).
+                        </p>
+                      </div>
+                    </div>
                     {/* FORMULARIO */}
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <div className="space-y-2">
@@ -410,7 +473,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         whileTap={{ scale: 0.98 }}
                         type="submit"
                         disabled={isSubmitting} // 👈 Evita que el usuario haga doble clic
-                        className={`w-full mt-6 backdrop-blur-xl font-bold py-4 rounded-full flex items-center justify-center gap-2 transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] ${
+                        className={`w-full mt-6 backdrop-blur-xl font-bold py-4 rounded-full flex items-center justify-center gap-2 transition-all ${
                           isSubmitting
                             ? "bg-blue-800 text-gray-300 cursor-not-allowed border border-blue-800"
                             : "bg-blue-600/90 border border-blue-400/50 hover:bg-blue-500 text-white"

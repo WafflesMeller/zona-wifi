@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroNavbar from '../../components/HeroNavbar';
 import PaymentFlow from '../../components/PaymentFlow';
+import FloatingWhatsApp from '../../components/FloatingWhatsApp';
 
 export default function Home() {
   const [showPayment, setShowPayment] = useState(false);
@@ -40,6 +41,8 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <FloatingWhatsApp />
 
     </div>
   );
